@@ -14,42 +14,41 @@ import kotlin.reflect.KProperty
  * Created by pengxr on 2021/4/7.
  */
 
-fun <T> fragmentArgumentNullable(defaultValue: T? = null) =
-    FragmentArgumentDelegateNullable(defaultValue)
+fun <T> Fragment.argumentNullable() = FragmentArgumentPropertyNullable<T>()
 
-fun <T> fragmentArgument() = FragmentArgumentProperty<T>()
+fun <T> Fragment.argument(defaultValue: T? = null) = FragmentArgumentProperty(defaultValue)
 
-fun <T> activityArgumentNullable(defaultValue: T? = null) =
-    ActivityArgumentDelegateNullable(defaultValue)
+fun <T> Activity.argumentNullable() = ActivityArgumentDelegateNullable<T>()
 
-fun <T> activityArgument() = ActivityArgumentProperty<T>()
+fun <T> Activity.argument(defaultValue: T? = null) = ActivityArgumentProperty(defaultValue)
 
 // --------------------------------------------------------------------------------------
 // Fragment
 // --------------------------------------------------------------------------------------
 
-class FragmentArgumentProperty<T> : ReadWriteProperty<Fragment, T> {
+class FragmentArgumentProperty<T>(private val defaultValue: T? = null) :
+    ReadWriteProperty<Fragment, T> {
 
     override fun getValue(thisRef: Fragment, property: KProperty<*>): T {
         return thisRef.arguments?.getValue(property.name) as? T
+            ?: defaultValue
             ?: throw IllegalStateException("Property ${property.name} could not be read")
     }
 
     override fun setValue(thisRef: Fragment, property: KProperty<*>, value: T) {
         val arguments = thisRef.arguments ?: Bundle().also { thisRef.arguments = it }
-        if (arguments.containsKey(property.name)) {
+        /*if (arguments.containsKey(property.name)) {
             // The Value is not expected to be modified
             return
-        }
+        }*/
         arguments[property.name] = value
     }
 }
 
-class FragmentArgumentDelegateNullable<T>(private val defaultValue: T? = null) :
-    ReadWriteProperty<Fragment, T?> {
+class FragmentArgumentPropertyNullable<T> : ReadWriteProperty<Fragment, T?> {
 
     override fun getValue(thisRef: Fragment, property: KProperty<*>): T? {
-        return thisRef.arguments?.getValue(property.name) ?: defaultValue
+        return thisRef.arguments?.getValue(property.name)
     }
 
     override fun setValue(thisRef: Fragment, property: KProperty<*>, value: T?) {
@@ -66,19 +65,20 @@ class FragmentArgumentDelegateNullable<T>(private val defaultValue: T? = null) :
 // Activity
 // --------------------------------------------------------------------------------------
 
-class ActivityArgumentProperty<T> : ReadOnlyProperty<Activity, T> {
+class ActivityArgumentProperty<T>(private val defaultValue: T? = null) :
+    ReadOnlyProperty<Activity, T> {
 
     override fun getValue(thisRef: Activity, property: KProperty<*>): T {
         return thisRef.intent?.extras?.getValue(property.name) as? T
+            ?: defaultValue
             ?: throw IllegalStateException("Property ${property.name} could not be read")
     }
 }
 
-class ActivityArgumentDelegateNullable<T>(private val defaultValue: T? = null) :
-    ReadOnlyProperty<Activity, T?> {
+class ActivityArgumentDelegateNullable<T> : ReadOnlyProperty<Activity, T?> {
 
     override fun getValue(thisRef: Activity, property: KProperty<*>): T? {
-        return thisRef.intent?.extras?.getValue(property.name) ?: defaultValue
+        return thisRef.intent?.extras?.getValue(property.name)
     }
 }
 
